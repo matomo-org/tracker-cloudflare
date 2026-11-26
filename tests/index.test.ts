@@ -52,6 +52,32 @@ describe('Worker fetch handler', () => {
     expect(sendSpy).toHaveBeenCalledTimes(1);
   });
 
+  it('returns origin redirect without tracking it', async () => {
+    const originResponse = new Response(null, {
+      status: 301,
+      headers: { location: 'https://example.com/path/' }
+    });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValue(originResponse) as unknown as typeof fetch;
+    const sendSpy = vi
+      .spyOn(http, 'sendMatomoHit')
+      .mockResolvedValue(undefined);
+
+    const response = await worker.fetch(
+      new Request('https://example.com/path', {
+        headers: { 'user-agent': 'AgentX' }
+      }),
+      env,
+      { waitUntil }
+    );
+
+    expect(response.status).toBe(301);
+    expect(response.headers.get('location')).toBe('https://example.com/path/');
+    await waitUntil.mock.calls[0][0];
+    expect(sendSpy).not.toHaveBeenCalled();
+  });
+
   it('returns fallback when origin fails but still tracks', async () => {
     const fetchMock = vi.fn().mockRejectedValue(new Error('boom'));
     global.fetch = fetchMock as unknown as typeof fetch;

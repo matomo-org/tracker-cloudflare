@@ -125,6 +125,54 @@ describe('buildMatomoPayload (Worker)', () => {
     expect(payload?.url).toBe('https://example.com/path');
   });
 
+  it.each([301, 302, 303, 307, 308])(
+    'returns null for %i redirect responses by default',
+    (status) => {
+      const response = new Response(null, {
+        status,
+        headers: { location: 'https://example.com/path/' }
+      });
+      const payload = buildMatomoPayload(
+        new Request('https://example.com/path', {
+          headers: { 'user-agent': 'AgentX' }
+        }),
+        response,
+        10,
+        config
+      );
+      expect(payload).toBeNull();
+    }
+  );
+
+  it('tracks 304 Not Modified responses', () => {
+    const response = new Response(null, { status: 304 });
+    const payload = buildMatomoPayload(
+      new Request('https://example.com/path', {
+        headers: { 'user-agent': 'AgentX' }
+      }),
+      response,
+      10,
+      config
+    );
+    expect(payload?.http_status).toBe(304);
+  });
+
+  it('tracks redirect responses when TRACK_HTTP_REDIRECTS is enabled', () => {
+    const response = new Response(null, {
+      status: 301,
+      headers: { location: 'https://example.com/path/' }
+    });
+    const payload = buildMatomoPayload(
+      new Request('https://example.com/path', {
+        headers: { 'user-agent': 'AgentX' }
+      }),
+      response,
+      10,
+      { ...config, trackHttpRedirects: true }
+    );
+    expect(payload?.http_status).toBe(301);
+  });
+
   it('uses defaults when user agent allowlist is disabled', () => {
     const response = new Response(null, { status: 200 });
     const payload = buildMatomoPayload(

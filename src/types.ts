@@ -13,6 +13,7 @@ export interface Env {
   MATOMO_TIMEOUT_MS?: string;
   LOG_LEVEL?: LogLevel;
   HTTP_METHOD_ALLOWLIST?: string;
+  TRACK_HTTP_REDIRECTS?: string;
   USER_AGENT_ALLOWLIST_REGEX?: string;
   URL_EXCLUDE_REGEX?: string;
   DOCUMENT_REGEX?: string;
@@ -25,6 +26,7 @@ export interface MatomoConfig {
   matomoTimeoutMs: number;
   logLevel: LogLevel;
   httpMethodAllowlist: string[];
+  trackHttpRedirects: boolean;
   userAgentAllowlistRegex?: RegExp;
   urlExcludeRegex?: RegExp;
   documentRegex?: RegExp;

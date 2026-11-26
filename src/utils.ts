@@ -24,3 +24,6 @@ export const getContentLength = (response: Response): number | undefined => {
   const parsed = Number.parseInt(header, 10);
   return Number.isNaN(parsed) ? undefined : parsed;
 };
+
+export const isHttpRedirect = (status: number): boolean =>
+  status >= 300 && status < 400 && status !== 304;

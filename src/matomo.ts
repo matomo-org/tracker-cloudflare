@@ -2,6 +2,7 @@ import type { MatomoConfig, MatomoPayload } from './types.js';
 import {
   formatMatomoDateTime,
   getContentLength,
+  isHttpRedirect,
   isUserAgentAllowed
 } from './utils.js';
 
@@ -22,6 +23,13 @@ export function buildMatomoPayload(
     config.httpMethodAllowlist.length > 0 &&
     !config.httpMethodAllowlist.includes(method)
   ) {
+    return null;
+  }
+
+  // The client follows the redirect and the target is tracked on its own, so
+  // counting the 3xx too would double-count the visit. 304 is a real view
+  // served from cache. Mirrors Matomo's log importer (--enable-http-redirects).
+  if (!config.trackHttpRedirects && isHttpRedirect(response.status)) {
     return null;
   }
 

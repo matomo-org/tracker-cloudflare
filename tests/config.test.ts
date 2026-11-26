@@ -14,7 +14,8 @@ describe('getConfig', () => {
       matomoSiteId: 42,
       matomoTimeoutMs: 5000,
       logLevel: 'warn',
-      httpMethodAllowlist: ['GET']
+      httpMethodAllowlist: ['GET'],
+      trackHttpRedirects: false
     });
     expect(config.userAgentAllowlistRegex).toEqual(
       /(?:ChatGPT-User|MistralAI-User|Gemini-Deep-Research|Claude-User|Perplexity-User|Google-NotebookLM|Google-GeminiNotebook)/i
@@ -47,6 +48,7 @@ describe('getConfig', () => {
       MATOMO_TIMEOUT_MS: '8000',
       LOG_LEVEL: 'debug',
       HTTP_METHOD_ALLOWLIST: 'get, post',
+      TRACK_HTTP_REDIRECTS: 'true',
       USER_AGENT_ALLOWLIST_REGEX: 'CustomBot',
       URL_EXCLUDE_REGEX: '\\.(?:js|css)$',
       DOCUMENT_REGEX: '\\.custom$'
@@ -56,7 +58,8 @@ describe('getConfig', () => {
       matomoSiteId: 42,
       matomoTimeoutMs: 8000,
       logLevel: 'debug',
-      httpMethodAllowlist: ['GET', 'POST']
+      httpMethodAllowlist: ['GET', 'POST'],
+      trackHttpRedirects: true
     });
     expect(config.userAgentAllowlistRegex).toEqual(/CustomBot/i);
     expect(config.urlExcludeRegex).toEqual(/\.(?:js|css)$/i);
@@ -83,6 +86,22 @@ describe('getConfig', () => {
     expect(() => getConfig({ ...baseEnv, DOCUMENT_REGEX: '[' })).toThrow(
       /Invalid DOCUMENT_REGEX/
     );
+  });
+
+  it('parses TRACK_HTTP_REDIRECTS case-insensitively', () => {
+    const parse = (value: string) =>
+      getConfig({ ...baseEnv, TRACK_HTTP_REDIRECTS: value }).trackHttpRedirects;
+    expect(parse('TRUE')).toBe(true);
+    expect(parse(' 1 ')).toBe(true);
+    expect(parse('false')).toBe(false);
+    expect(parse('0')).toBe(false);
+    expect(parse('')).toBe(false);
+  });
+
+  it('throws on invalid TRACK_HTTP_REDIRECTS', () => {
+    expect(() =>
+      getConfig({ ...baseEnv, TRACK_HTTP_REDIRECTS: 'yes' })
+    ).toThrow(/Invalid TRACK_HTTP_REDIRECTS/);
   });
 
   it('throws on invalid HTTP_METHOD_ALLOWLIST', () => {

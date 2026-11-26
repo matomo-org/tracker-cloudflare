@@ -9,6 +9,14 @@ const toInt = (value: string | undefined | null, fallback?: number) => {
   return parsed;
 };
 
+const toBool = (name: string, value: string | undefined, fallback: boolean) => {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized) return fallback;
+  if (normalized === 'true' || normalized === '1') return true;
+  if (normalized === 'false' || normalized === '0') return false;
+  throw new Error(`Invalid ${name} value "${value}" (expected true or false)`);
+};
+
 const escapeRegex = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const defaultUserAgentPatterns = [
@@ -66,6 +74,11 @@ export function getConfig(
       `Invalid HTTP_METHOD_ALLOWLIST entry "${invalidMethod}" (expected letters only)`
     );
   }
+  const trackHttpRedirects = toBool(
+    'TRACK_HTTP_REDIRECTS',
+    env.TRACK_HTTP_REDIRECTS,
+    false
+  );
   const allowlistPattern =
     env.USER_AGENT_ALLOWLIST_REGEX || defaultAllowlistPattern;
   const urlExcludePattern = env.URL_EXCLUDE_REGEX || defaultUrlExcludePattern;
@@ -98,6 +111,7 @@ export function getConfig(
     matomoTimeoutMs,
     logLevel,
     httpMethodAllowlist: normalizedHttpMethodAllowlist,
+    trackHttpRedirects,
     userAgentAllowlistRegex,
     urlExcludeRegex,
     documentRegex
