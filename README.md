@@ -14,6 +14,7 @@ Cloudflare Worker (TypeScript, Node 24 tooling) that sits inline on your zone, p
 - `MATOMO_SITE_ID` (required): Matomo site ID (integer).
 - `MATOMO_TIMEOUT_MS` (optional, default `5000`): HTTP timeout in ms for Matomo calls.
 - `HTTP_METHOD_ALLOWLIST` (optional, default `GET`): Comma-separated list of HTTP methods to track (e.g. `GET,POST`); empty/unset uses the default.
+- `TRACK_HTTP_REDIRECTS` (optional, default `false`): Set to `true` to track redirect responses (3xx except `304 Not Modified`). By default they are skipped because the client follows the redirect and the target URL is tracked separately, so tracking both would double-count the visit (e.g. a trailing-slash canonical redirect). Mirrors the Matomo log importer's `--enable-http-redirects` option.
 - `DOCUMENT_REGEX` (optional): Case-insensitive regex to detect downloads; matching URLs add `download=<url>` to Matomo payloads. This regex runs against the full URL (`protocol://host/path?query`) and defaults to a modern/common set of extensions:
   - Documents: `.pdf`, `.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, `.pptx`
   - Data/text: `.csv`, `.json`, `.txt`, `.xml`
@@ -51,7 +52,7 @@ Wrangler bundles the TypeScript entry for you; no manual build is required for `
 
 - Install Wrangler (e.g., `npm install -g wrangler` or `npx wrangler --version` to use npx).
 - Copy `.dev.vars.example` to `.dev.vars` and set your local values (these are only for `wrangler dev --local`):
-  - `MATOMO_URL`, `MATOMO_SITE_ID`, `MATOMO_TIMEOUT_MS`, `LOG_LEVEL`, `HTTP_METHOD_ALLOWLIST`, `USER_AGENT_ALLOWLIST_REGEX`, `URL_EXCLUDE_REGEX`, `DOCUMENT_REGEX`
+  - `MATOMO_URL`, `MATOMO_SITE_ID`, `MATOMO_TIMEOUT_MS`, `LOG_LEVEL`, `HTTP_METHOD_ALLOWLIST`, `TRACK_HTTP_REDIRECTS`, `USER_AGENT_ALLOWLIST_REGEX`, `URL_EXCLUDE_REGEX`, `DOCUMENT_REGEX`
 - Start local dev (serves on http://localhost:8787 by default):
 
 ```sh
@@ -102,7 +103,7 @@ The Worker simply calls `fetch(request)` to reach your origin and separately pos
 - Receives each incoming request, proxies to origin with `fetch`, and returns the origin response. If configuration is invalid, logs an error and just proxies (no tracking).
 - Measures server time (`pf_srv` in milliseconds), status, and response bytes from `Content-Length` when present.
 - Builds a Matomo payload with `idsite`, `rec:1`, `recMode:1`, `url`, `source:'Cloudflare'`, `cdt` (UTC `YYYY-MM-DD HH:mm:ss`), and `ua`.
-- Skips tracking when `URL_EXCLUDE_REGEX` matches; detects downloads via `DOCUMENT_REGEX`; disallowed UAs are skipped by `USER_AGENT_ALLOWLIST_REGEX`; skips tracking when request method not in `HTTP_METHOD_ALLOWLIST`.
+- Skips tracking when `URL_EXCLUDE_REGEX` matches; detects downloads via `DOCUMENT_REGEX`; disallowed UAs are skipped by `USER_AGENT_ALLOWLIST_REGEX`; skips tracking when request method not in `HTTP_METHOD_ALLOWLIST`; skips redirect responses (3xx except 304) unless `TRACK_HTTP_REDIRECTS=true`.
 - Sends a single Matomo hit asynchronously via `waitUntil` to `/matomo.php` (standard tracking API) with timeout.
 
 ## Logging

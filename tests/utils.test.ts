@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatMatomoDateTime,
   getContentLength,
+  isHttpRedirect,
   isUserAgentAllowed
 } from '../src/utils.js';
 
@@ -12,6 +13,15 @@ describe('utils', () => {
     expect(isUserAgentAllowed('OtherUA', regex)).toBe(false);
     expect(isUserAgentAllowed(undefined, regex)).toBe(false);
     expect(isUserAgentAllowed('AnyUA')).toBe(true);
+  });
+
+  it('detects redirect statuses except 304', () => {
+    for (const status of [300, 301, 302, 303, 307, 308]) {
+      expect(isHttpRedirect(status)).toBe(true);
+    }
+    for (const status of [200, 204, 304, 400, 404, 500]) {
+      expect(isHttpRedirect(status)).toBe(false);
+    }
   });
 
   it('formats date with zero padding', () => {
